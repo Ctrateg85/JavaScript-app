@@ -1,0 +1,14 @@
+# PyInstaller netijeleri (build.bat bilen täzeden döredilýär)
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+
+# Ýerli sazlamalar
+.claude/settings.local.json
+.vscode/
+Thumbs.db
+desktop.ini

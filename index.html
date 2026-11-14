@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JavaScript — öwrediji we test programmasy</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Elýeterlilik: klawiatura bilen esasy mazmuna geçmek we ekran okaýjy üçin gizlin habar meýdany -->
+  <button class="skip-link" id="skipLink" type="button">Esasy mazmuna geç</button>
+  <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#/home" title="JavaScript"><span class="brand-ic">⚡</span> <span class="brand-text">JavaScript</span></a>
+    <!-- Ýer ýetmese ýazgylar gizlenip, diňe ikonkalar galýar (App.fitHeader) -->
+    <nav class="nav" aria-label="Esasy menýu">
+      <a href="#/home" data-nav="home" title="Sapaklar"><span class="nav-ic">📚</span><span class="nav-label">Sapaklar</span></a>
+      <a href="#/rating" data-nav="rating" title="Reýting"><span class="nav-ic">🏆</span><span class="nav-label">Reýting</span></a>
+      <a href="#/duel" data-nav="duel" title="1×1 Duel"><span class="nav-ic">⚔️</span><span class="nav-label">1×1 Duel</span></a>
+      <a href="#/encyclopedia" data-nav="encyclopedia" title="Ensiklopediýa"><span class="nav-ic">📖</span><span class="nav-label">Ensiklopediýa</span></a>
+      <a href="#/practice" data-nav="practice" title="Mysal işlemek"><span class="nav-ic">🧪</span><span class="nav-label">Mysal işlemek</span></a>
+      <a href="#/lan" data-nav="lan" title="Lokal"><span class="nav-ic">🌐</span><span class="nav-label">Lokal</span></a>
+    </nav>
+    <div class="top-stats" id="topStats" role="group" aria-label="Görkezijiler"></div>
+    <a class="icon-btn" href="#/editor" id="editorBtn" title="Kod redaktory" aria-label="Kod redaktory">&lt;/&gt;</a>
+    <a class="profile-btn" href="#/profile" id="profileBtn" title="Profil" aria-label="Profil">🦊</a>
+  </header>
+
+  <main id="view" class="container" tabindex="-1"></main>
+
+  <!-- Aşaky çep burçdaky açylyp-ýapylýan menýu -->
+  <div class="corner-menu" id="cornerMenu">
+    <nav class="corner-panel" id="cornerPanel" aria-label="Menýu" hidden>
+      <a href="#/settings" data-corner="settings">⚙️ Sazlamalar</a>
+      <a href="#/guide" data-corner="guide">📘 Programmany nädip ulanmaly</a>
+      <a href="#/about" data-corner="about">ℹ️ Programma hakda</a>
+    </nav>
+    <button class="corner-btn" id="cornerBtn" title="Menýu" aria-label="Menýu" aria-expanded="false" aria-controls="cornerPanel">☰</button>
+  </div>
+
+  <footer class="footer">
+    <a href="#/about">ℹ️ Programma hakda</a>
+    <span>·</span>
+    <span>JavaScript © 2026 — Meredow Serdar</span>
+  </footer>
+
+  <!-- Maglumatlar -->
+  <script src="js/data/lessons.js"></script>
+  <script src="js/data/lessons-extra-1.js"></script>
+  <script src="js/data/lessons-extra-2.js"></script>
+  <script src="js/data/lessons-extra-3.js"></script>
+  <script src="js/data/explanations.js"></script>
+  <script src="js/data/book.js"></script>
+  <script src="js/data/book-extra.js"></script>
+  <script src="js/data/book-extra-2.js"></script>
+  <script src="js/data/book-extra-3.js"></script>
+  <script src="js/data/personas.js"></script>
+  <script src="js/data/problems.js"></script>
+  <script src="js/data/problems-2.js"></script>
+  <!-- Esasy modullar -->
+  <script src="js/clock.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/i18n-dict.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/a11y.js"></script>
+  <script src="js/books.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/rating.js"></script>
+  <!-- Bölümler (sahypalar) -->
+  <script src="js/views/onboarding.js"></script>
+  <script src="js/views/home.js"></script>
+  <script src="js/views/lesson.js"></script>
+  <script src="js/views/profile.js"></script>
+  <script src="js/views/rating.js"></script>
+  <script src="js/views/duel.js"></script>
+  <script src="js/views/encyclopedia.js"></script>
+  <script src="js/views/about.js"></script>
+  <script src="js/views/settings.js"></script>
+  <script src="js/views/editor.js"></script>
+  <script src="js/views/practice.js"></script>
+  <script src="js/views/lan.js"></script>
+  <script src="js/views/guide.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

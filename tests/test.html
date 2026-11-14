@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JavaScript — awtomatik testler</title>
+  <style>
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: #121212; color: #ececec; margin: 0; padding: 24px; }
+    h1 { color: #76b900; margin-top: 0; }
+    .suite { background: #1e1e1e; border: 1px solid #333; border-radius: 6px; padding: 14px 18px; margin-bottom: 14px; }
+    .suite h2 { margin: 0 0 8px; font-size: 1.1rem; }
+    .ok { color: #a6e22e; } .bad { color: #ff8a8e; }
+    .fail { font-family: Consolas, monospace; font-size: 0.85rem; color: #ff8a8e; margin: 4px 0 0 18px; white-space: pre-wrap; }
+    .sum { font-size: 1.3rem; font-weight: 800; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+    .sum.ok { background: rgba(118, 185, 0, 0.15); } .sum.bad { background: rgba(229, 72, 77, 0.15); }
+  </style>
+</head>
+<body>
+  <h1>🧪 JavaScript — awtomatik testler</h1>
+  <p>Bu sahypa programmanyň maglumatlaryny we esasy funksiýalaryny barlaýar. Faýly brauzerde açmak ýeterlik.</p>
+  <div id="summary" class="sum">⏳ Barlanýar...</div>
+  <div id="out"></div>
+
+  <script src="../js/data/lessons.js"></script>
+  <script src="../js/data/lessons-extra-1.js"></script>
+  <script src="../js/data/lessons-extra-2.js"></script>
+  <script src="../js/data/lessons-extra-3.js"></script>
+  <script src="../js/data/explanations.js"></script>
+  <script src="../js/data/book.js"></script>
+  <script src="../js/data/book-extra.js"></script>
+  <script src="../js/data/book-extra-2.js"></script>
+  <script src="../js/data/book-extra-3.js"></script>
+  <script src="../js/data/personas.js"></script>
+  <script src="../js/data/problems.js"></script>
+  <script src="../js/data/problems-2.js"></script>
+  <script src="../js/clock.js"></script>
+  <script src="../js/util.js"></script>
+  <script src="../js/i18n-dict.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script>
+    // Test toplumy: at we barlaglar (her barlag ýalňyşlyk tapsa, setir gaýtarýar)
+    const suites = [];
+    const suite = (name, fn) => suites.push({ name, fn });
+    const fmt = (v, top) => typeof v === 'string' ? (top ? v : '"' + v + '"')
+      : Array.isArray(v) ? '[' + v.map(x => fmt(x)).join(', ') + ']'
+      : (v && typeof v === 'object') ? '{ ' + Object.keys(v).map(k => k + ': ' + fmt(v[k])).join(', ') + ' }' : String(v);
+    const runLog = code => {
+      const logs = [];
+      try { new Function('console', code)({ log: (...a) => logs.push(a.map(x => fmt(x, true)).join(' ')) }); }
+      catch (e) { return 'ERR:' + e.name; }
+      return logs.join(' ');
+    };
+    // Söz bilen ýazylan jogaplar: "Hiç zat" — boş çykyş, "A we B" — iki setir
+    const norm = s => String(s).trim().replace(/^Hiç zat$/, '').replace(/ we /g, ' ').replace(/\s+/g, ' ').replace(/,\s*/g, ', ').replace(/'/g, '"');
+    // Asinhron ýa-da DOM ulanýan kodlar bu ýerde barlanmaýar (olar bada-bat netije bermeýär)
+    const ASYNC = /document|setTimeout|Promise|await|async|\.then\(|fetch|queueMicrotask|<input|null\.x|btn\.|ul\./;
+
+    suite('Sapaklaryň gurluşy (12 bölüm × 10 dereje × 5 sorag)', () => {
+      const errs = [], ids = new Set();
+      if (window.LESSONS.length !== 12) errs.push('Bölüm sany: ' + window.LESSONS.length);
+      window.LESSONS.forEach(u => {
+        if (u.levels.length !== 10) errs.push(u.id + ': dereje sany ' + u.levels.length);
+        u.levels.forEach(l => {
+          if (ids.has(l.id)) errs.push('Gaýtalanýan id: ' + l.id);
+          ids.add(l.id);
+          if (l.questions.length !== 5) errs.push(l.id + ': sorag sany ' + l.questions.length);
+          l.questions.forEach((q, i) => {
+            if (q.type === 'choice' && !(q.answer >= 0 && q.answer < q.options.length)) errs.push(l.id + '#' + i + ': nädogry jogap indeksi');
+            if (q.type === 'input' && !(q.answers && q.answers.length)) errs.push(l.id + '#' + i + ': jogap ýok');
+            if (!q.explain) errs.push(l.id + '#' + i + ': düşündiriş ýok');
+          });
+        });
+      });
+      return errs;
+    });
+
+    suite('Sapaklaryň kod mysallary: berlen jogap koduň netijesi bilen gabat gelýär', () => {
+      const errs = [];
+      window.LESSONS.forEach(u => u.levels.forEach(l => l.questions.forEach((q, i) => {
+        if (q.q !== 'Bu kod konsola näme çykarar?' || !q.code || ASYNC.test(q.code)) return;
+        const expected = q.type === 'choice' ? [q.options[q.answer]] : q.answers;
+        const got = runLog(q.code);
+        if (got.startsWith('ERR:')) { if (!expected.some(e => norm(e) === got.slice(4))) errs.push(`${l.id}#${i}: ${got}`); return; }
+        if (!expected.some(e => norm(e) === norm(got) || norm(e).replace(/, /g, ' ') === norm(got).replace(/, /g, ' '))) {
+          errs.push(`${l.id}#${i}: garaşylýan [${expected.join(' | ')}], netije [${got}]`);
+        }
+      })));
+      return errs;
+    });
+
+    suite('Ekranda ";"-syz görkezilýän kod netijäni üýtgetmeýär', () => {
+      const errs = [];
+      window.LESSONS.forEach(u => u.levels.forEach(l => l.questions.forEach((q, i) => {
+        if (!q.code || ASYNC.test(q.code)) return;
+        if (runLog(q.code) !== runLog(App.util.noSemi(q.code))) errs.push(`${l.id}#${i}`);
+      })));
+      return errs;
+    });
+
+    suite('Meseleler: 104 mesele, nusga çözgüt ähli testlerden geçýär, her meselede goşmaça barlag bar', () => {
+      const errs = [];
+      const eq = (a, b) => {
+        if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) < 1e-9;
+        if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x, k) => eq(x, b[k]));
+        if (a && b && typeof a === 'object' && typeof b === 'object') { const ka = Object.keys(a), kb = Object.keys(b); return ka.length === kb.length && ka.every(k => eq(a[k], b[k])); }
+        return a === b;
+      };
+      if (window.PROBLEMS.length !== 104) errs.push('Mesele sany: ' + window.PROBLEMS.length);
+      for (const p of window.PROBLEMS) {
+        if (p.tests.length < 3) errs.push(p.id + ': goşmaça barlag ýok (' + p.tests.length + ' test)');
+        for (const src of [p.solution, App.util.noSemi(p.solution)]) {
+          let fn;
+          try { fn = new Function(src + '\nreturn ' + p.fn)(); } catch (e) { errs.push(p.id + ': ' + e.message); break; }
+          p.tests.forEach(([args, exp], k) => {
+            let got; try { got = fn(...JSON.parse(JSON.stringify(args))); } catch (e) { got = e.name; }
+            if (!eq(got, exp)) errs.push(`${p.id} test #${k + 1}: garaşylýan ${JSON.stringify(exp)}, netije ${JSON.stringify(got)}`);
+          });
+        }
+      }
+      return errs;
+    });
+
+    suite('Ensiklopediýa: 18 bap, kod bloklarynyň sintaksisi dogry', () => {
+      const errs = [];
+      if (window.BOOK.chapters.length !== 18) errs.push('Bap sany: ' + window.BOOK.chapters.length);
+      window.BOOK.chapters.forEach(c => c.blocks.forEach(b => {
+        if (b[0] !== 'code') return;
+        let ok = true; try { new Function(b[1]); } catch { ok = false; }
+        if (!ok) return;   // nusga bölekler (meselem, ýalňyşlygyň mysaly) hasaba alynmaýar
+        try { new Function(App.util.noSemi(b[1])); } catch (e) { errs.push(c.id + ': ";"-syz görnüşi bozuk — ' + e.message); }
+      }));
+      return errs;
+    });
+
+    suite('Kömekçi funksiýalar (util.js)', () => {
+      const errs = [], U = App.util;
+      const check = (name, got, exp) => { if (JSON.stringify(got) !== JSON.stringify(exp)) errs.push(`${name}: ${JSON.stringify(got)} ≠ ${JSON.stringify(exp)}`); };
+      check('esc', U.esc('<b>"x"</b>'), '&lt;b&gt;&quot;x&quot;&lt;/b&gt;');
+      check('noSemi for', U.noSemi('for (let i = 0; i < 3; i++) x++;'), 'for (let i = 0; i < 3; i++) x++');
+      check('noSemi ASI', U.noSemi('let a = 1;\n[a] = [2];'), 'let a = 1\n;[a] = [2]');
+      check('noSemi setir', U.noSemi('console.log("a;b");'), 'console.log("a;b")');
+      check('contrast ak/gara', Math.round(U.contrast('#ffffff', '#000000')), 21);
+      check('mixColor', U.mixColor('#000000', '#ffffff', 0.5), '#808080');
+      check('fmtDuration', U.fmtDuration(90 * 60000), '1 sag 30 min');
+      return errs;
+    });
+
+    suite('Duel botlary we ligalar', () => {
+      const errs = [];
+      if (window.DUEL_BOTS.length !== 4) errs.push('Bot sany: ' + window.DUEL_BOTS.length);
+      window.DUEL_BOTS.forEach(b => {
+        if (!(b.win[0] <= b.win[1] && b.loss[0] <= b.loss[1])) errs.push(b.id + ': reýting aralygy nädogry');
+        if (!(b.questions[0] < b.questions[1])) errs.push(b.id + ': kynlyk zolagy nädogry');
+      });
+      if (window.LEAGUES.length !== 5) errs.push('Liga sany: ' + window.LEAGUES.length);
+      return errs;
+    });
+
+    suite('Terjime sözlügi (rus we iňlis dilleri)', () => {
+      const errs = [], D = window.I18N_DICT, count = (s, ch) => s.split(ch).length - 1;
+      Object.entries(D).forEach(([k, v]) => {
+        if (!Array.isArray(v) || v.length !== 2 || v.some(x => typeof x !== 'string' || !x)) return errs.push(`"${k}": 2 terjime bolmaly`);
+        v.forEach((x, i) => {
+          const lang = ['ru', 'en'][i];
+          // Her san (#) terjimede ýa-da tertip boýunça (#), ýa-da belgili ({1}) ulanylmaly; artyk san bolmaly däl
+          const used = count(x, '#') + new Set(x.match(/\{\d\}/g) || []).size;
+          if (used > count(k, '#')) errs.push(`"${k}" (${lang}): # sany artyk`);
+          ['§', '⌚', '*'].forEach(ch => { if (count(x, ch) !== count(k, ch)) errs.push(`"${k}" (${lang}): "${ch}" sany deň däl`); });
+        });
+      });
+      const check = (text, l, exp) => { const got = App.i18n.tr(text, l); if (got !== exp) errs.push(`${l}: "${text}" → "${got}" (garaşylýan "${exp}")`); };
+      check('📚 Sapaklar', 'en', '📚 Lessons');
+      check('3-nji dereje', 'ru', 'Уровень 3');
+      check('Hepdäniň gutarmagyna: 2 gün 3 sag', 'en', 'Week ends in: 2 d 3 h');
+      check('10 minutda 1 jan', 'en', '1 heart per 10 min');
+      check('Wariant saýlaň — Opus 5.5 jogap berýänçä saýlawy üýtgedip bilersiňiz.', 'en', 'Pick an option — you can change it until Opus 5.5 answers.');
+      check('Giriş we üýtgeýänler — sapaga geç', 'ru', 'Введение и переменные — к уроку');
+      check('Sözlükde ýok tekst', 'en', 'Sözlükde ýok tekst');
+      if (App.i18n.lang !== 'tk') errs.push('Test soň dil yzyna gaýtarylmady: ' + App.i18n.lang);
+      return errs;
+    });
+
+    // Işletmek we netijäni görkezmek
+    let failed = 0;
+    const out = document.getElementById('out');
+    for (const s of suites) {
+      let errs;
+      try { errs = s.fn(); } catch (e) { errs = ['Test ýalňyşlygy: ' + e.message]; }
+      if (errs.length) failed++;
+      out.insertAdjacentHTML('beforeend', `<div class="suite"><h2 class="${errs.length ? 'bad' : 'ok'}">${errs.length ? '❌' : '✅'} ${s.name}</h2>
+        ${errs.slice(0, 30).map(e => `<div class="fail">${App.util.esc(e)}</div>`).join('')}
+        ${errs.length > 30 ? `<div class="fail">... we ýene ${errs.length - 30}</div>` : ''}</div>`);
+    }
+    const sum = document.getElementById('summary');
+    sum.className = 'sum ' + (failed ? 'bad' : 'ok');
+    sum.textContent = failed ? `❌ ${failed} / ${suites.length} toplumda ýalňyşlyk bar` : `✅ Ähli ${suites.length} test toplumy geçdi`;
+  </script>
+</body>
+</html>
